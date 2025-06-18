@@ -1,0 +1,276 @@
+---
+title: "ezML-intro"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{ezML-intro}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Introduction
+
+This package makes running machine models supported by the [caret package](https://topepo.github.io/caret/) very easy. Basically users only need to provide the name of the ML method and the rest are handled automatically. More than 20 output files are produced covering various stages of the process, including preprocessing, training, testing, and inference. See the documentation of [ml.run()](https://blueskypie.github.io/ezML/reference/ml.run.html) for details and examples below.
+
+# Examples
+
+## dataset
+
+Let's use `titanic_train` data because it contains columns of type numerical and categorical of two and three groups.
+
+```{r, eval = TRUE,message=FALSE, warning=FALSE}
+library(ezML)
+library(caret)
+
+if (!requireNamespace("titanic", quietly = TRUE)){
+  install.packages('titanic')
+}
+data("titanic_train",package = 'titanic')
+
+`%>%` = magrittr::`%>%`
+df1 = dplyr::mutate(titanic_train,
+           Survived = c('N','Y')[Survived+1],
+           Pclass = paste0('c',Pclass) %>% as.factor) %>%
+  dplyr::select(-c(PassengerId,Name,Ticket,Cabin))
+  
+knitr::kable(df1[1:6,],caption = 'First six rows of titanic_train')
+```
+
+The table listed the information of `r nrow(df1)` passengers in Titanic; each row is a passenger and some rows contains missing values. Here are the meanings of some columns:
+
+-   Survived: binary (Y/N), did the passenger survive?
+-   Pclass: ordinal factor (c1, c2, c3), Ticket class (1 = upper, 2 = middle, 3 = lower)
+-   SibSp: integer, Number of siblings or spouses aboard
+-   Parch: integer, Number of parents or children aboard
+-   Fare: numeric, Passenger fare (in British pounds)
+-   Embarked: Categorical Port of embarkation:
+    -   C = Cherbourg
+    -   Q = Queenstown
+    -   S = Southampton
+
+## Classification
+
+### Random Forest models
+
+Delgado et. al tested 179 classifiers on 121 datasets in the paper [Do we Need Hundreds of Classifiers to Solve Real World Classification Problems?](https://jmlr.org/papers/v15/delgado14a.html), Random Forest (RF) came on top. (The study were carried out in 2014, right before XGBoost was invented.) Here are examples of running RF models using `ezML::ml.run` function with different values of parameter `cMethod`.
+
+#### randomForest
+
+```{r, eval = FALSE}
+re = ml.run(allDF = df1,
+          classCol = 'Survived',
+          posLabel = 'Y',
+          negLabel = 'N',
+          cMethod = 'randomForest',
+          prior.impute = 'missForest'
+         )
+```
+
+Please read the docs of `ml.run`. Below are the explanations for two parameters:\
+
+-   `cMethod = 'randomForest'`
+
+    This is the only setting in this package where [caret::train](https://www.rdocumentation.org/packages/caret/versions/4.47/topics/train) is not used; instead, it uses [randomForest::tuneRF](https://www.rdocumentation.org/packages/randomForest/versions/4.7-1.2/topics/tuneRF) directly for model selection and fitting.
+
+-   `prior.impute = 'missForest'`
+
+    Because `randomForest::tuneRF` cannot handle missing value, prior imputation is done using [missForest::missForest](https://www.rdocumentation.org/packages/missForest/versions/1.5/topics/missForest).
+
+After the run, the folder `randomForest` was created in the current directory, and all output files went there. The `ml.run` returns a list of the following items:
+
+-   `imp`: data.frame, variable importance score.
+
+-   `trainStats`: a named numerical vector containing AUC and various stats from the prediction on the training dataset.
+
+-   `testStats`: similar, but from testing dataset.
+
+#### rf
+
+```{r, eval = FALSE}
+re = ml.run(allDF = df1,
+          classCol = 'Survived',
+          posLabel = 'Y',
+          negLabel = 'N',
+          cMethod = 'rf',
+          preProc = c('nzv','bagImpute'),
+          trainCtrlParas = list(method='oob')
+         )
+```
+
+Explanations:
+
+-   `cMethod = 'rf'`
+
+    Use the implemented [randomForest::randomForest](https://www.rdocumentation.org/packages/randomForest/versions/4.7-1.2/topics/randomForest) in `caret::train`.
+
+-   `preProc = c('nzv','bagImpute')`
+
+    One advantage of using `caret::train` is that pre-processing, e.g. imputation, can be done in cross validation (CV), not prior, to avoid information leak. `preProc` corresponds to `preProcess` in `caret::train`; here near-zero variance (nzv) features are removed, and missing values are imputed using bagged tree model.
+
+-   `trainCtrlParas = list(method='oob')`
+
+    `trainCtrlParas` is a list containing parameters in [caret::trainControl](https://www.rdocumentation.org/packages/caret/versions/6.0-92/topics/trainControl) which controls the resampling and CV. Here OOB, instead of CV, is used to evaluate model performance which is ROC by default for two-class prediction.
+
+#### parRF and ranger
+
+The Delgado paper also concluded `parRF`, the parallel implementation of `randomForest` in caret, achieved slightly higher accuracy than `rf`, which is unexpected.
+
+```{r, eval = FALSE}
+cl <- parallel::makePSOCKcluster(parallel::detectCores() - 1)
+doParallel::registerDoParallel(cl)
+re = ml.run(allDF = df1,
+          classCol = 'Survived',
+          posLabel = 'Y',
+          negLabel = 'N',
+          cMethod = 'parRF'
+          preProc = c('nzv','bagImpute'),
+          trainCtrlParas = list(method='oob')
+          )
+parallel::stopCluster(cl)
+foreach::registerDoSEQ()
+```
+
+A faster implementation of parallel random forest is [ranger::ranger](https://www.rdocumentation.org/packages/ranger/versions/0.16.0/topics/ranger) written in C++. But when using OOB, probably due to bugs in `caret`, the model cannot compute probabilities for prediction, thus Accuracy, instead of ROC, is used as the metric for model evaluation.
+
+```{r, eval = FALSE}
+re = ml.run(allDF = df1,
+          classCol = 'Survived',
+          posLabel = 'Y',
+          negLabel = 'N',
+          preProc = c('nzv','bagImpute'),
+          trainCtrlParas = list(method='oob',classProbs = TRUE),
+          cMethod = 'ranger',
+          trainParas = list(importance = "impurity"))
+```
+
+The `importance` is a parameter in `ranger::ranger`.
+
+Using CV enables the computation of ROC; but it will be slower than OOB.
+
+```{r, eval = FALSE}
+re = ml.run(allDF = df1,
+          classCol = 'Survived',
+          posLabel = 'Y',
+          negLabel = 'N',
+          preProc = c('nzv','bagImpute'),
+          cMethod = 'ranger',
+          trainParas = list(importance = "impurity"))
+```
+
+The default for `trainCtrlParas` is 10-fold and 3-repeat CV, which has the best bias-variance balance based on this [post](http://appliedpredictivemodeling.com/blog/2014/11/27/vpuig01pqbklmi72b8lcl3ij5hj2qm) from Max Kuhn, the author of `caret`.
+
+### svmRadial
+
+SVM classifiers ranked second in the Delgado paper. Here is one example. Note here the target variable `Pclass` contains three levels, and data standardization (centering and scaling) is carried out since the RBF kernel involves the computation of distance in high dimensional spaces and standardization equalizes the weight of each predictor in such computation.
+
+```{r, eval = FALSE}
+re = ml.run(allDF = df1,
+          classCol = 'Pclass',
+          cMethod = 'svmRadial',
+          preProc = c("center", "scale",'nzv','knnImpute'))
+```
+
+### glmnet
+
+Elastic Net is another fast and accurate model. Since it fits penalized and generalized linear models, standardization ensures fair penalization across features. Although [glmnet::glmnet](https://www.rdocumentation.org/packages/glmnet/versions/4.1-8/topics/glmnet) does standardization by default, it's turned off in `caret` and has to be set explicitly so that the identical standardization from the training set can be applied to the holdout in CV to prevent information leak.
+
+```{r, eval = FALSE}
+re = ml.run(allDF = df1,
+          classCol = 'Survived',
+          posLabel = 'Y',
+          negLabel = 'N',
+          preProc = c("center", "scale",'nzv','knnImpute'),
+          cMethod = 'glmnet')
+```
+
+### glm
+
+Logistic regression is simple but often surprisingly good. It does not have hyper-parameters in caret, as checked by `caret::getModelInfo("glm",regex = F)$parameters$parameter`. Therefore, CV is skipped.
+
+```{r, eval = FALSE}
+re = ml.run(allDF = df1,
+          classCol = 'Survived',
+          posLabel = 'Y',
+          negLabel = 'N',
+          cMethod = 'glm',
+          trainCtrlParas = list(method = 'none'),
+          trainParas = list(family = "binomial"))
+```
+
+### xgbTree
+
+Gradient Boosting Machines often have greater accuracy than RFs, esp. with tuning. In addition, it can handle missing values.
+
+```{r, eval = FALSE}
+xgbGrid <- expand.grid(
+  nrounds = seq.int(50,100,10),
+  max_depth = 6,
+  colsample_bytree = 1,
+  eta = 0.1,
+  gamma = 0,
+  min_child_weight = 1,
+  subsample = 1
+)
+
+
+re = ml.run(allDF = df1,
+          classCol = 'Survived',
+          posLabel = 'Y',
+          negLabel = 'N',
+          preProc = 'nzv',
+          cMethod = 'xgbTree',
+          trainParas = list(tuneGrid = xgbGrid))
+```
+
+## regression
+
+### Random Forest models
+
+#### randomForest
+
+Here the target variable is numeric. The output folder `randomForest` is saved under a folder `regr`.
+
+```{r, eval = FALSE}
+re = ml.run(allDF = df1,
+          classCol = 'Fare',
+          prior.impute = 'missForest',
+          cMethod = 'randomForest',
+          oDir = 'regr')
+```
+
+#### rf
+
+```{r, eval = FALSE}
+re = ml.run(allDF = df1,
+          classCol = 'Fare',
+          preProc = c('nzv','bagImpute'),
+          trainCtrlParas = list(method='oob'),
+          cMethod = 'rf',
+          oDir = 'regr')
+```
+
+### glmnet
+
+```{r, eval = FALSE}
+re = ml.run(allDF = df1,
+          classCol = 'Fare',
+          preProc = c("center", "scale",'nzv','knnImpute'),
+          cMethod = 'glmnet',
+          oDir = 'regr')
+```
+
+### svmRadial
+
+```{r, eval = FALSE}
+re = ml.run(allDF = df1,
+          classCol = 'Fare',
+          preProc = c("center", "scale",'nzv','knnImpute'),
+          cMethod = 'svmRadial',
+          oDir = 'regr')
+```

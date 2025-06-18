@@ -1,0 +1,30 @@
+Package: ezML
+Title: A Plug-n-Play Machine Learning Wrapper
+Version: 0.1.0
+Authors@R: 
+    person("Jike", "Cui", , "16052330+blueskypie@users.noreply.github.com", 
+    role = c("aut", "cre"))
+Description: This package makes running machine models supported by the 
+    [caret package](https://topepo.github.io/caret/) very easy. Basically users only
+    need to provide the name of the ML method and the rest are handled automatically.
+    More than 20 output files are produced covering various stages of the process, 
+    including preprocessing, training, testing, and inference.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends: 
+    caret
+Imports: 
+    ggplot2,
+    ggpubr,
+    Hmisc,
+    pacman,
+    DMwR2,
+    missForest,
+    pROC
+Suggests: 
+    badger,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

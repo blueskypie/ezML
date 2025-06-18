@@ -1,0 +1,29 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# ezML
+`r badger::badge_devel(color = "blue")`
+`r badger::badge_repostatus("Active")`
+`r badger::badge_lifecycle("stable")`
+
+
+This package makes running machine models supported by the [caret package](https://topepo.github.io/caret/) very easy. Basically users only need to provide the name of the ML method and the rest are handled automatically. More than 20 output files are produced covering various stages of the process, including preprocessing, training, testing, and inference. 
+
+See [manual](https://blueskypie.github.io/ezML/reference/index.html) and  [examples](https://blueskypie.github.io/ezML/articles/ezML-intro.html)
+
+Since this is just a toy, I have no plan to submit it to CRAN. So please install 
+from github directly:
+
+`devtools::install_github("blueskypie/ezML")`
