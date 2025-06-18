@@ -2,7 +2,7 @@
 % Please edit documentation in R/ML.funs.r
 \name{df.matched}
 \alias{df.matched}
-\title{check the unique values of non-numerical columns of two data.frames}
+\title{compare the unique values of non-numerical columns of two data.frames}
 \usage{
 df.matched(df1, df2)
 }

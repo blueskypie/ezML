@@ -2,20 +2,20 @@
 % Please edit documentation in R/ML.funs.r
 \name{df.reset}
 \alias{df.reset}
-\title{reset Inf and char in a data.frame}
+\title{reset \code{Inf} and \code{char} values in a data.frame}
 \usage{
 df.reset(df, charAsFactor = TRUE)
 }
 \arguments{
 \item{df}{data.frame}
 
-\item{charAsFactor}{TRUE, logical; set char columns as factor}
+\item{charAsFactor}{TRUE, logical; set \code{char} columns as factor}
 }
 \value{
 a modified data.frame
 }
 \description{
-Inf will be set as NA, and char columns as factor
+\code{Inf} will be set as NA, and \code{char} columns as factor
 }
 \examples{
 # none

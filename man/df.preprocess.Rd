@@ -2,7 +2,7 @@
 % Please edit documentation in R/ML.funs.r
 \name{df.preprocess}
 \alias{df.preprocess}
-\title{preprocessing before training}
+\title{data preprocessing before training}
 \usage{
 df.preprocess(
   allDF = NULL,
@@ -27,21 +27,27 @@ df.preprocess(
 \item{prior.nzvCondX}{NULL, char; remove NZV and conditionalX variables before training.
 This can be used only if \code{caret::train} is not used in the model building.
 Following are the available options:
-* \code{NULL}: do not remove before training
-* one of \verb{n, nx}:
-+ n: NZV
-+ nx: NZV and ConditionalX
-if detected, removed variables are written to files \code{nzv.csv} and \code{conditionalX.txt}}
+\itemize{
+\item \code{NULL}: do not remove before training
+\item one of \verb{n, nx}:
+\itemize{
+\item n: NZV
+\item nx: NZV and ConditionalX
+if detected, removed variables are written to files \code{nzv.csv} and \code{conditionalX.txt}
+}
+}}
 
 \item{dummyEncoding}{\code{cMethod \%in\% c('xgbTree','svmRadial')},logical; is dummy variable encoding needed before training;}
 
 \item{prior.impute}{\code{c(NA,'missForest','KNN')}, char; impute missing values before training.
 This can be used only if \code{caret::train} is not used in the model building.
 Following are the available options:
-* \code{NA}: do not impute before training
-* one of \verb{missForest, KNN}: impute using \code{\link[missForest:missForest]{missForest::missForest()}} or \code{\link[DMwR2:knnImputation]{DMwR2::knnImputation()}}}
+\itemize{
+\item \code{NA}: do not impute before training
+\item one of \verb{missForest, KNN}: impute using \code{\link[missForest:missForest]{missForest::missForest()}} or \code{\link[DMwR2:knnImputation]{DMwR2::knnImputation()}}
+}}
 
-\item{classCol}{char; the column name of the class, i.e. response variable}
+\item{classCol}{char; the column name of the class, i.e. the target variable}
 
 \item{posLabel, negLabel}{NULL, char; the positive and negative labels for two-class classification}
 
@@ -51,20 +57,25 @@ Following are the available options:
 a list containing \code{trainDF}, \code{testDF}, and \code{allDF} post processing.
 }
 \description{
+This function does the preprocessing before training
+}
+\details{
 options for preprocessing:
 \itemize{
 \item dummy variable encoding
 \item modification to the whole dataset before training, including
 \itemize{
 \item imputation using \code{missForest} and \code{KNN}
-\item detection and removal of \verb{Near Zero Variance (NZV)} and \code{ConditionalX} variables
+\item detection and removal of \verb{Near Zero Variance (NZV)} and \code{ConditionalX} variables.
 Note that these modifications apply only in situations where \code{caret::train}
 is not used in the model building; for example
+\itemize{
 \item ML method is \code{glm} where no cross validation (CV) is needed due to the absence of hyper-parameters
 \item ML method is \code{randomForest} where the training is done using \code{\link[randomForest:tuneRF]{randomForest::tuneRF()}}
 Otherwise, those modification should be specified in \code{caret::train(preProc)} to avoid
 information leakage during training. Note that \code{missForest} is not available
 in \code{preProc}.
+}
 }
 }
 }

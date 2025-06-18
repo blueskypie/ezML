@@ -16,7 +16,7 @@ the final list
 }
 \description{
 The final list contains items in both lists; but items in the left list that
-share the same name as those in the right list are covered by the latter.
+share the same name as those in the right list are overwritten by the latter.
 }
 \examples{
 # none

@@ -24,12 +24,12 @@ method2package=function(method){
 }
 
 
-#' reset Inf and char in a data.frame
+#' reset `Inf` and `char` values in a data.frame
 #'
-#' Inf will be set as NA, and char columns as factor
+#' `Inf` will be set as NA, and `char` columns as factor
 #'
 #' @param df data.frame
-#' @param charAsFactor TRUE, logical; set char columns as factor
+#' @param charAsFactor TRUE, logical; set `char` columns as factor
 #'
 #' @return a modified data.frame
 #' @export
@@ -115,13 +115,15 @@ writePredStats_bestTunes=function(mFit,fileName,statTable,aucVal=NA){
 
 #' compute the prediction stats of a model
 #'
-#' This function applies to the response variable of type factor. It computes the
-#' prediction stats of a model and write the following files
-#    * roc.pdf
-#    * prediction.hist.pdf
-#    * prediction.csv
-#    * confusion.table.txt
-#    * all.stats.rds
+#' This function computes the
+#' prediction stats of a model on the target variable of type `factor`.
+#'
+#' Following files are the output:
+#'    * roc.pdf
+#'    * prediction.hist.pdf
+#'    * prediction.csv
+#'    * confusion.table.txt
+#'    * all.stats.rds
 #'
 #' @param mFit the model
 #' @param newData data.frame; the new data
@@ -131,9 +133,14 @@ writePredStats_bestTunes=function(mFit,fileName,statTable,aucVal=NA){
 #' @param predProbs NULL, data.frame; supplied prediction probability; column names
 #'   should be the levels in the response variable.
 #' @param nLevels NULL, the number of levels in the class column.
-#' @param ... passed to `caret::predict()`
+#' @param ... passed to `caret::predict.train()`
 #'
-#' @return a named numerical vector of stats
+#' @return a named numerical vector of following stats:
+#'    * AUC
+#'    * accuracy and Kappa statistic values
+#'    * the sensitivity, specificity, positive predictive value, negative
+#'    predictive value, precision, recall, F1, prevalence, detection rate,
+#'    detection prevalence and balanced accuracy for each class
 #' @export
 #'
 #' @examples # none
@@ -210,28 +217,36 @@ predStats.Categorical = function(mFit,
 
 
 
-
+#' compute the prediction stats of a model
+#'
+#' This function computes the
+#' prediction stats of a model on the target variable of type `numeric`.
+#'
+#' Following files are the output:
+#'    * cor.png
+#'    * residule.png
+#'    * prediction.csv
+#'    * model.stats.txt
+#'    * all.stats.rds
+#'
+#' @param mFit the model
+#' @param newData data.frame; the new data
+#' @param classInd integer; the index of the class column
+#' @param posLabel NULL, char; the positive labels
+#' @param ofPre NULL, char; the prefix of output file
+#' @param predVals NULL, data.frame; supplied prediction.
+#' @param ... passed to `caret::predict.train()`
+#'
+#' @return a named numerical vector of `R2, RMSE, MAE`
+#' @export
+#'
+#' @examples # none
 predStats.numerical = function(mFit,
                                newData,
                                classInd,
                                ofPre = NULL,
                                predVals = NULL,
                                ...) {
-  # Function: make prediction, compute prediction stats, and output related files
-  # Parameters:
-  #    mFit: training model
-  #    newData: test data to be predicted on
-  #    classInd: the index of class column in newData
-  #    ofPre: output file base name
-  #    predVals: predicted probability
-  #    ...: passed to caret::predict()
-  # Output: file names start with ofPre
-  #    cor.png
-  #    residule.png
-  #    prediction.csv
-  #    model.stats.txt
-  #    all.stats.rds
-  # Return: a vector c(R2, RMSE, MAE)
   if(!pacman::p_exists(pROC,TRUE)) pacman::p_install(pROC)
 
   if (is.null(predVals))
@@ -294,7 +309,7 @@ predStats.numerical = function(mFit,
 #' @param PC 1:3, integer vector; dimensions to plot
 #' @param figMain NULL, char; title of the plots
 #' @param ofPre NULL, char; prefix of output file name (including path)
-#' @param colorCol 'black',char; the color of each subject in the plot; can also be
+#' @param colorCol 'black', char; the color of each subject in the plot; can also be
 #'   a column in `phenoDF`
 #' @param doReturn TRUE, logical; should a list of ggplot objects be returned?
 #' @param ... passed to `ggpubr::ggscatter`
@@ -330,7 +345,7 @@ draw.classic.MDS=function(phenoDF,fMat=NULL,distMat=NULL,PC=1:3,figMain=NULL,
 
 
 
-#' check the unique values of non-numerical columns of two data.frames
+#' compare the unique values of non-numerical columns of two data.frames
 #'
 #' Two data frames are matched if the unique values of each of their non-numerical columns are same.
 #' Then a model trained from one data frame can predict the response in the other.
@@ -369,17 +384,19 @@ df.matched=function(df1,df2){
 
 
 
-#' preprocessing before training
+#' data preprocessing before training
+#'
+#' This function does the preprocessing before training
 #'
 #' options for preprocessing:
 #'    + dummy variable encoding
 #'    + modification to the whole dataset before training, including
 #'      - imputation using `missForest` and `KNN`
-#'      - detection and removal of `Near Zero Variance (NZV)` and `ConditionalX` variables
+#'      - detection and removal of `Near Zero Variance (NZV)` and `ConditionalX` variables.
 #'      Note that these modifications apply only in situations where `caret::train`
 #'      is not used in the model building; for example
-#'      - ML method is `glm` where no cross validation (CV) is needed due to the absence of hyper-parameters
-#'      - ML method is `randomForest` where the training is done using [randomForest::tuneRF()]
+#'        - ML method is `glm` where no cross validation (CV) is needed due to the absence of hyper-parameters
+#'        - ML method is `randomForest` where the training is done using [randomForest::tuneRF()]
 #'      Otherwise, those modification should be specified in `caret::train(preProc)` to avoid
 #'      information leakage during training. Note that `missForest` is not available
 #'      in `preProc`.
@@ -390,18 +407,18 @@ df.matched=function(df1,df2){
 #' @param prior.nzvCondX NULL, char; remove NZV and conditionalX variables before training.
 #'   This can be used only if `caret::train` is not used in the model building.
 #'   Following are the available options:
-#'     * `NULL`: do not remove before training
-#'     * one of `n, nx`:
-#'       + n: NZV
-#'       + nx: NZV and ConditionalX
+#'    * `NULL`: do not remove before training
+#'    * one of `n, nx`:
+#'      + n: NZV
+#'      + nx: NZV and ConditionalX
 #'   if detected, removed variables are written to files `nzv.csv` and `conditionalX.txt`
 #' @param dummyEncoding `cMethod %in% c('xgbTree','svmRadial')`,logical; is dummy variable encoding needed before training;
 #' @param prior.impute `c(NA,'missForest','KNN')`, char; impute missing values before training.
 #'   This can be used only if `caret::train` is not used in the model building.
 #'   Following are the available options:
-#'     * `NA`: do not impute before training
-#'     * one of `missForest, KNN`: impute using [missForest::missForest()] or [DMwR2::knnImputation()]
-#' @param classCol char; the column name of the class, i.e. response variable
+#'    * `NA`: do not impute before training
+#'    * one of `missForest, KNN`: impute using [missForest::missForest()] or [DMwR2::knnImputation()]
+#' @param classCol char; the column name of the class, i.e. the target variable
 #' @param posLabel,negLabel NULL, char; the positive and negative labels for two-class classification
 #' @param oDir NULL, char; output directory
 #'
@@ -536,7 +553,7 @@ df.preprocess = function(allDF = NULL,
 #' concatenate two lists
 #'
 #' The final list contains items in both lists; but items in the left list that
-#' share the same name as those in the right list are covered by the latter.
+#' share the same name as those in the right list are overwritten by the latter.
 #'
 #' @param list1 the left list
 #' @param list2 the right list
@@ -559,7 +576,9 @@ list.concat=function(list1,list2){
 #'
 #' This function compiles tools in `caret` packages to provide a machine learning (ML)
 #' interface where users only need to provide the name of the ML method and the rest
-#' are handled automatically, including:
+#' are handled automatically.
+#'
+#' The capabilities of this function include the following:
 #'    * preprocessing of the whole dataset
 #'      + dummy variable encoding
 #'      + modification to the whole dataset before training, including
@@ -567,39 +586,42 @@ list.concat=function(list1,list2){
 #'        - detection and removal of `Near Zero Variance (NZV)` and `ConditionalX` variables
 #'        Note that these modifications apply only in situations where `caret::train`
 #'        is not used in the model building; for example
-#'        - ML method is `glm` where no cross validation (CV) is needed due to the absence of hyper-parameters
-#'        - ML method is `randomForest` where the training is done using [randomForest::tuneRF()]
+#'
+#'          ✦ ML method is `glm` where no cross validation (CV) is needed due to the absence of hyper-parameters
+#'
+#'          ✦ ML method is `randomForest` where the training is done using [randomForest::tuneRF()]
+#'
 #'        Otherwise, those modification should be specified in `preProc` to avoid
 #'        information leakage during training. Note that `missForest` is not available
 #'        in `preProc`.
 #'    * training and testing
 #'    * the output of various files of the training and testing stats:
-#'      +  nzv.csv: columns removed due to NZV and the details of each columns
-#'      +  train.all.stats.rds: stats of the prediction of training model on the training dataset
-#'      +  train.cv.pdf: curve of prediction performance during CV for upto four tuning parameters
-#'      +  train.model.rds
-#'      +  train.prediction.csv: prediction for each subject in training set
-#'      +  train.var.imp.pdf: plot of variable importance
-#'      +  train.var.imp.csv: importance score of each variable
-#'      +  test.all.stats.rds
-#'      +  test.prediction.csv
-#'      +  $cMethod.image.rdata: running environment
+#'      +  *nzv.csv*: columns removed due to NZV and the details of each columns
+#'      +  *train.all.stats.rds*: stats of the prediction of training model on the training dataset
+#'      +  *train.cv.pdf*: curve of prediction performance during CV for upto four tuning parameters
+#'      +  *train.model.rds*
+#'      +  *train.prediction.csv*: prediction for each subject in training set
+#'      +  *train.var.imp.pdf*: plot of variable importance
+#'      +  *train.var.imp.csv*: importance score of each variable
+#'      +  *test.all.stats.rds*
+#'      +  *test.prediction.csv*
+#'      +  *$cMethod.image.rdata*: running environment
 #'      for classification
-#'      +  train.confusion.table.txt
-#'      +  train.prediction.hist.pdf: prediction histogram
-#'      +  train.roc.pdf: ROC curve
-#'      +  train.MDS12.png, train.MDS13.png, train.MDS23.png: MDS plots of subjects if trained via `randomForest`
-#'      +  test.confusion.table.txt
-#'      +  test.prediction.hist.pdf
-#'      +  test.roc.pdf
-#'      +  test.MDS12.png, test.MDS13.png, test.MDS23.png
-#'      +  conditionalX.txt: columns removed due to conditionalX
+#'      +  *train.confusion.table.txt*
+#'      +  *train.prediction.hist.pdf*: prediction histogram
+#'      +  *train.roc.pdf*: ROC curve
+#'      +  *train.MDS12.png, train.MDS13.png, train.MDS23.png*: MDS plots of subjects if trained via `randomForest`
+#'      +  *test.confusion.table.txt*
+#'      +  *test.prediction.hist.pdf*
+#'      +  *test.roc.pdf*
+#'      +  *test.MDS12.png, test.MDS13.png, test.MDS23.png*
+#'      +  *conditionalX.txt*: columns removed due to conditionalX
 #'      for regression
-#'      +  train.pred.cor.png: scatter plot of raw and predicted values
-#'      +  train.pred.residual.png: various diagnostic residual plots
-#'      +  test.pred.cor.png: scatter plot of raw and predicted values
-#'      +  test.pred.residual.png: plots of raw and standardized residuals
-#'    * error handled to avoid crush
+#'      +  *train.pred.cor.png*: scatter plot of raw and predicted values
+#'      +  *train.pred.residual.png*: various diagnostic residual plots
+#'      +  *test.pred.cor.png*: scatter plot of raw and predicted values
+#'      +  *test.pred.residual.png*: plots of raw and standardized residuals
+#'    * errors are handled to avoid crush.
 #'
 #'
 #' @param allDF NULL, data.frame; the data.frame of all the data where rows are
@@ -608,7 +630,7 @@ list.concat=function(list1,list2){
 #' @param trainDF NULL, data.frame; the data.frame of the training data
 #' @param testDF NULL, data.frame; the data.frame of the testing data
 #' @param preProc `c("center", "scale",'nzv')`, char vector; preprocessing options; see [caret::preProcess()]
-#' @param classCol char; the column name of the class, i.e. response variable
+#' @param classCol char; the column name of the class, i.e. the target variable
 #' @param posLabel,negLabel NULL, char; for classification only; the positive and negative labels for two-class classification
 #' @param cMethod char; the name of the ML method
 #' @param packName NULL, char; the name of the package containing the ML method.
@@ -618,37 +640,37 @@ list.concat=function(list1,list2){
 #'   encoding needed on the combined training and testing datasets before training?
 #'   Although `caret::train()` handles dummy variable encoding automatically during CV and
 #'   prediction on testing. It's possible that there are levels in the holdout or
-#'   testing samples absent from the training data, causing error and exit.
+#'   testing samples that are absent from the training data, causing errors.
 #' @param prior.nzvCondX NULL, char; remove NZV and conditionalX variables before training.
 #'   This can be used only if `caret::train` is not used in the model building.
 #'   Following are the available options:
-#'     * `NULL`: do not remove before training
-#'     * one of `n, nx`:
-#'       + n: NZV
-#'       + nx: NZV and ConditionalX
+#'    * `NULL`: do not remove before training
+#'    * one of `n, nx`:
+#'      + n: NZV
+#'      + nx: NZV and ConditionalX
 #'   if detected, removed variables are written to files `nzv.csv` and `conditionalX.txt`
 #' @param prior.impute `c(NA,'missForest','KNN')`, char; impute missing values before training.
 #'   This can be used only if `caret::train` is not used in the model building.
 #'   Following are the available options:
-#'     * `NA`: do not impute before training
-#'     * one of `missForest, KNN`: impute using [missForest::missForest()] or [DMwR2::knnImputation()]
+#'    * `NA`: do not impute before training
+#'    * one of `missForest, KNN`: impute using [missForest::missForest()] or [DMwR2::knnImputation()]
 #' @param oDir NULL, char; output directory
 #' @param trainCtrlParas NULL, list; parameters for train control in [caret::trainControl()].
 #'   Here are its default values if `method` is not `oob`:
 #'    * `savePredictions = 'final'`,
 #'    * if `trainInd` is provided, `index = trainInd`
-#'    * otherwise `method = "repeatedcv",repeats = 3,number = 10`
-#'    This CV method has the best bias-variance balance based on this
+#'    * otherwise `method = "repeatedcv",repeats = 3,number = 10`, which has the best bias-variance balance based on this
 #'    [post](http://appliedpredictivemodeling.com/blog/2014/11/27/vpuig01pqbklmi72b8lcl3ij5hj2qm)
 #'    from Max Kuhn, the author of `caret`.
 #'
 #'    additional defaults for classification:
 #'    * `classProbs = TRUE`,
 #'    * `summaryFunction = twoClassSummary` or `multiClassSummary` depending on the class column
-#' @param trainParas NULL,list; parameters for train in [caret::train()].
+#' @param trainParas NULL, list; parameters for train in [caret::train()].
 #'   Here are its default values:
 #'    * `tuneLength = 10`
-#'   `tuneLength` is the number of levels for each tuning parameters that should
+#'
+#'      `tuneLength` is the number of levels for each tuning parameters that should
 #'   be generated by train. If trainControl has the option `search = "random"`, this
 #'   is the maximum number of tuning parameter combinations that will be generated
 #'   by the random search. if `search = "grid"` which is the default, this is the maximum number of levels
@@ -657,13 +679,13 @@ list.concat=function(list1,list2){
 #'    * `metric = "ROC"` or `'Accuracy'` depending on the class column
 #'
 #' @return a list of the following items
-#'     * `imp`: data.frame, variable importance score
-#'     * `trainStats`: a named numerical vector containing AUC and various stats
+#'    * `imp`: data.frame, variable importance scores
+#'    * `trainStats`: a named numerical vector containing AUC and various stats
 #'         in the confusion table from the prediction on the training dataset.
-#'     * `testStats`: similar, but from testing dataset.
+#'    * `testStats`: similar, but from the testing dataset.
 #' @export
 #'
-#' @examples # none
+#' @examples # see https://blueskypie.github.io/ezML/articles/ezML-intro.html
 ml.run = function(allDF = NULL,
                   trainDF = NULL,
                   testDF = NULL,
@@ -941,44 +963,48 @@ rm.NZV.condX = function(df1, y=NULL,ofPre = NULL) {
 
 
 
+#' encode categorical variables
+#'
 #' convert categorical columns into numerical ones of full rank
 #'
 #' It does the following:
-#'    1. for nominal character variable of n categories, n-1 binary variables are created
+#'    1. for nominal character variable of n categories, n-1 binary variables are created.
 #'    2. for nominal factor variable of n levels and m categories (m<=n),
-#'      * if `useLevel=TRUE`,  n-1 binary variables are created
-#'      * otherwise, m-1 binary variables are created
+#'        * if `useLevel = TRUE`,  n-1 binary variables are created.
+#'        * otherwise, m-1 binary variables are created.
 #'    3. for ordinal factor variable of n levels and m categories,
-#'      * if m equals 2,  one variable assuming equal distance among levels are created
-#'      * otherwise, n-1 variable assuming linear and 2 to n-1 degree of polynomial
+#'        * if m equals 2,  one variable assuming equal distance among levels are created
+#'        * otherwise, n-1 variable assuming linear and 2 to n-1 degree of polynomial
 #'        relationship among levels are created.
 #'    4. cells of NA are kept.
 
 #' @param df1 data frame; columns are variables.
-#' @param useLevel FALSE, logical; if FALSE, for factor columns, the unique values
+#' @param useLevel FALSE, logical; if TRUE, for factor columns, the unique values
 #'   will be factor levels, instead of the actual levels present in the data.
 #' @param ... passed to `caret::dummyVars()`
 #'
 #' @returns a new data.frame where all categorical columns are split into dummy
-#'   columns of values between 1 and 0.
+#'   columns of values between -1 and 1.
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' k=matrix(1:10,nrow = 5)
 #' colnames(k)=c('n1','n2')
-#'  k=as.data.frame(k)
-#'  k$c5=LETTERS[1:5]
-#'  k$c2na=c('a','a',NA,'b','b')
-#'  k$f2na=factor(k$c2na)
-#'  k$f2naL2O=factor(k$f2na,ordered = TRUE)
-#'  k$f2naL3=factor(k$c2na,levels = c('a','b','c'))
-#'  k$f2naL3O=factor(k$f2naL3,ordered = TRUE)
-#'  k$f3na=factor(c('a','a',NA,'b','c'))
-#'  k$f3naL3O=factor(k$f3na,ordered = TRUE)
-#'  k$f3naL4O=factor(k$f3na,levels = c('a','b','c','d'),ordered = TRUE)
-#'  k$f3naL5O=factor(k$f3na,levels = c('a','b','c','d','e'),ordered = TRUE)
-#'  k
-#'  dummy.encode(k)
+#' k=as.data.frame(k)
+#' k$c5=LETTERS[1:5]
+#' k$c2na=c('a','a',NA,'b','b')
+#' k$f2na=factor(k$c2na)
+#' k$f2naL2O=factor(k$f2na,ordered = TRUE)
+#' k$f2naL3=factor(k$c2na,levels = c('a','b','c'))
+#' k$f2naL3O=factor(k$f2naL3,ordered = TRUE)
+#' k$f3na=factor(c('a','a',NA,'b','c'))
+#' k$f3naL3O=factor(k$f3na,ordered = TRUE)
+#' k$f3naL4O=factor(k$f3na,levels = c('a','b','c','d'),ordered = TRUE)
+#' k$f3naL5O=factor(k$f3na,levels = c('a','b','c','d','e'),ordered = TRUE)
+#' k
+#' dummy.encode(k)
+#' }
 dummy.encode=function(df1,useLevel=FALSE,...){
   k = caret::dummyVars(" ~ .", data = df1,fullRank = TRUE,...)
   k = data.frame(caret:::predict.dummyVars(k, newdata = df1))

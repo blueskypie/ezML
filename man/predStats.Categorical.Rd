@@ -31,14 +31,31 @@ should be the levels in the response variable.}
 
 \item{nLevels}{NULL, the number of levels in the class column.}
 
-\item{...}{passed to \code{caret::predict()}}
+\item{...}{passed to \code{caret::predict.train()}}
 }
 \value{
-a named numerical vector of stats
+a named numerical vector of following stats:
+\itemize{
+\item AUC
+\item accuracy and Kappa statistic values
+\item the sensitivity, specificity, positive predictive value, negative
+predictive value, precision, recall, F1, prevalence, detection rate,
+detection prevalence and balanced accuracy for each class
+}
 }
 \description{
-This function applies to the response variable of type factor. It computes the
-prediction stats of a model and write the following files
+This function computes the
+prediction stats of a model on the target variable of type \code{factor}.
+}
+\details{
+Following files are the output:
+\itemize{
+\item roc.pdf
+\item prediction.hist.pdf
+\item prediction.csv
+\item confusion.table.txt
+\item all.stats.rds
+}
 }
 \examples{
 # none

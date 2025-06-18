@@ -29,7 +29,7 @@ draw.classic.MDS(
 
 \item{ofPre}{NULL, char; prefix of output file name (including path)}
 
-\item{colorCol}{'black',char; the color of each subject in the plot; can also be
+\item{colorCol}{'black', char; the color of each subject in the plot; can also be
 a column in \code{phenoDF}}
 
 \item{doReturn}{TRUE, logical; should a list of ggplot objects be returned?}
