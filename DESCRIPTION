@@ -1,6 +1,6 @@
 Package: ezML
 Title: A Plug-n-Play Machine Learning Wrapper
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: 
     person("Jike", "Cui", , "16052330+blueskypie@users.noreply.github.com", 
     role = c("aut", "cre"))
