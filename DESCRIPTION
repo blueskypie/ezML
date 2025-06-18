@@ -28,3 +28,5 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+URL: https://github.com/blueskypie/ezML
+BugReports: https://github.com/blueskypie/ezML/issues
